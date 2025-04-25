@@ -45,6 +45,11 @@ func init(){
 			description: "Displays the name of the previous 20 locations",
 			callback:    commandMapb,
 		},
+		"explore": {
+			name:        "explore",
+			description: "Displays the name of the pokemon avaliable at location",
+			callback:    commandExplore,
+		},
 	}
 }
 
@@ -96,13 +101,13 @@ func cleanInput(text string) []string {
 	return trimmedParts
 }
 
-func commandExit(c *config) error {
+func commandExit(c *config, args []string) error {
 	fmt.Print("Closing the Pokedex... Goodbye!\n")
 	os.Exit(0)
 	return nil
 }
 
-func commandHelp(c *config) error {
+func commandHelp(c *config, args []string) error {
 	fmt.Println("Welcome to the Pokedex!")
 	for key, _ := range commands {
 		fmt.Printf("%s: %s\n", commands[key].name, commands[key].description)
@@ -111,7 +116,7 @@ func commandHelp(c *config) error {
 	return nil
 }
 
-func commandMap(c *config) error {
+func commandMap(c *config, args []string) error {
 	pokeList, _ := api.GetPokeapiList(c.Next)
 
 	for i := 0; i < len(pokeList.Results); i++ {
@@ -129,7 +134,7 @@ func commandMap(c *config) error {
 	return nil
 }
 
-func commandMapb(c *config) error {
+func commandMapb(c *config, args []string) error {
 	pokeList, _ := api.GetPokeapiList(c.Previous)
 
 	for i := 0; i < len(pokeList.Results); i++ {
@@ -144,5 +149,9 @@ func commandMapb(c *config) error {
     }
 
 	return nil
+}
+
+func commandExplore(args []string) error {
+
 }
 
