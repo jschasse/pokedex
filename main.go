@@ -12,7 +12,7 @@ import (
 type cliCommand struct {
 	name string
 	description string
-	callback func(c *config) error
+	callback func(c *config, args []string) error
 }
 
 type config struct {
@@ -21,7 +21,7 @@ type config struct {
 }
 
 var commands map[string]cliCommand
-
+const apiURL = "https://pokeapi.co/api/v2/location-area/"
 
 func init(){
 	commands = map[string]cliCommand {
@@ -57,10 +57,9 @@ func init(){
 
 func main() {
 	scanner := bufio.NewScanner(os.Stdin)
-	url := "https://pokeapi.co/api/v2/location-area/"
 
 	c := &config {
-		Next: url,
+		Next: apiURL,
 		Previous: "",
 	}
 
@@ -69,16 +68,16 @@ func main() {
 		scanner.Scan()
 		
 		input := scanner.Text()
-		cleanedInput := cleanInput(input)
-        if len(cleanedInput) == 0 {
+		commandWord, args := cleanInput(input)
+        if len(commandWord) == 0 && len(args) == 0 {
             continue
         }
 
-        commandName := cleanedInput[0]
+        
 
-        command, exists := commands[commandName]
+        command, exists := commands[commandWord]
         if exists {
-            err := command.callback(c)
+            err := command.callback(c, args)
             if err != nil {
                 fmt.Println("Error:", err)
             }
@@ -89,16 +88,18 @@ func main() {
 
 }
 
-func cleanInput(text string) []string {
+func cleanInput(text string) (string, []string) {
 	parts := strings.Fields(text)
 	trimmedParts := make([]string, len(parts))
 
 	for i, part := range parts {
 		trimmedParts[i] = strings.ToLower(strings.TrimSpace(part))
 	}
+
+	command := trimmedParts[0]
 	
 
-	return trimmedParts
+	return command, trimmedParts[1:]
 }
 
 func commandExit(c *config, args []string) error {
@@ -117,7 +118,10 @@ func commandHelp(c *config, args []string) error {
 }
 
 func commandMap(c *config, args []string) error {
-	pokeList, _ := api.GetPokeapiList(c.Next)
+	pokeList, err := api.GetPokeapiList(c.Next)
+	if err != nil {
+		fmt.Print(err)
+	}
 
 	for i := 0; i < len(pokeList.Results); i++ {
 		fmt.Printf("%s\n", pokeList.Results[i].Name)
@@ -135,7 +139,10 @@ func commandMap(c *config, args []string) error {
 }
 
 func commandMapb(c *config, args []string) error {
-	pokeList, _ := api.GetPokeapiList(c.Previous)
+	pokeList, err := api.GetPokeapiList(c.Previous)
+	if err != nil {
+		fmt.Print(err)
+	}
 
 	for i := 0; i < len(pokeList.Results); i++ {
 		fmt.Printf("%s\n", pokeList.Results[i].Name)
@@ -151,7 +158,18 @@ func commandMapb(c *config, args []string) error {
 	return nil
 }
 
-func commandExplore(args []string) error {
+func commandExplore(c *config, args []string) error {
+	pokeInfo, err := api.GetPokeAreaInfo(apiURL + args[0])
+	if err != nil {
+		return err
+	}
 
+	fmt.Println("Exploring ", args[0])
+	fmt.Println("Found Pokemon:")
+	for i := 0; i < len(pokeInfo.Pokemon_Encounters); i++ {
+		fmt.Printf("- %s\n", pokeInfo.Pokemon_Encounters[i].Pokemon.Name)
+	}
+
+	return nil
 }
 

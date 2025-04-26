@@ -28,7 +28,7 @@ type PokeapiList struct {
 
 type PokeAreaInfo struct {
 	Location NamedAPIResource
-	PokemonEncounters []PokemonEncounter
+	Pokemon_Encounters []PokemonEncounter
 }
 
 var cache = pokecache.NewCache(5 * time.Second)
@@ -65,4 +65,39 @@ func GetPokeapiList(url string) (PokeapiList, error) {
 
 	return pokeList, nil
 	
+}
+
+func GetPokeAreaInfo(url string) (PokeAreaInfo, error) {
+	cacheData, exists := cache.Get(url)
+
+	if exists {
+		var pokeInfo PokeAreaInfo
+		err := json.Unmarshal(cacheData, &pokeInfo)
+		if err == nil {
+			return pokeInfo, nil
+		} 
+	}
+
+	res, err := http.Get(url)
+	if err != nil {
+		return PokeAreaInfo{}, fmt.Errorf("error creating request: %w", err)
+	}
+
+	defer res.Body.Close()
+
+	data, err := io.ReadAll(res.Body)
+	if err != nil {
+		return PokeAreaInfo{}, fmt.Errorf("error reading response body from %s: %w", url, err)
+	}
+
+	cache.Add(url, data)
+
+	var pokeInfo PokeAreaInfo
+
+	err = json.Unmarshal(data, &pokeInfo)
+	if err != nil {
+		return PokeAreaInfo{}, fmt.Errorf("error unmarshalling location list from pokeapi %w", err)
+	}
+
+	return pokeInfo, nil
 }
