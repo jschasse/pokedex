@@ -66,6 +66,11 @@ func init(){
 			description: "Displays the stats of the pokemon that you have caught",
 			callback:    commandInspect,
 		},
+		"pokedex": {
+			name:        "pokedex",
+			description: "Displays the pokemon that you have caught",
+			callback:    commandPokedex,
+		},
 	}
 }
 
@@ -255,4 +260,11 @@ func commandInspect(c *config, args []string) error {
 
 	return nil
 
+}
+
+func commandPokedex(c *config, args []string) error {
+	for key, _ := range pokedex {
+		fmt.Printf(" - %s\n", key)
+	}
+	return nil
 }
