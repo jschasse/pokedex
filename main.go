@@ -6,6 +6,8 @@ import (
 	"bufio"
 	"os"
 	"github.com/jschasse/pokedex/internal/api"
+	"math/rand"
+	"time"
 )
 
 
@@ -21,9 +23,13 @@ type config struct {
 }
 
 var commands map[string]cliCommand
+var pokedex map[string]api.PokemonInfo
 const apiURL = "https://pokeapi.co/api/v2/location-area/"
+const apiURLPokemon = "https://pokeapi.co/api/v2/pokemon/"
 
 func init(){
+	rand.New(rand.NewSource(time.Now().UnixNano()))
+	pokedex = make(map[string]api.PokemonInfo)
 	commands = map[string]cliCommand {
 		"exit": {
 			name:        "exit",
@@ -49,6 +55,16 @@ func init(){
 			name:        "explore",
 			description: "Displays the name of the pokemon avaliable at location",
 			callback:    commandExplore,
+		},
+		"catch": {
+			name:        "catch",
+			description: "Attempts to catch the pokemon that you input",
+			callback:    commandCatch,
+		},
+		"inspect": {
+			name:        "inspect",
+			description: "Displays the stats of the pokemon that you have caught",
+			callback:    commandInspect,
 		},
 	}
 }
@@ -173,3 +189,46 @@ func commandExplore(c *config, args []string) error {
 	return nil
 }
 
+func commandCatch(c *config, args []string) error {
+	if len(args) == 0 {
+        return fmt.Errorf("you must provide a pokemon name to catch")
+    }
+    if len(args) > 1 {
+        return fmt.Errorf("please provide only one pokemon name")
+    }
+
+	pokemonName := args[0]
+
+	poke, err := api.GetPokemonInfo(apiURLPokemon + pokemonName)
+	if err != nil {
+		return err
+	}
+	// 3. Calculate Catch Threshold (Higher base experience = harder to catch)
+    // We'll use a simple approach: generate a random number up to a max value,
+    // and if it's less than a threshold derived from base experience, it's caught.
+    // Let's set a max threshold, e.g., 400. Higher base experience reduces the chance.
+    const maxThreshold = 400 // Adjust this for overall difficulty
+    // Ensure threshold doesn't go below a minimum, e.g., 20
+    threshold := maxThreshold - poke.Base_Experience
+    if threshold < 20 {
+        threshold = 20
+    }
+
+    // 4. Generate Random Number
+    // rand.Intn(n) returns a random number in [0, n). We'll use maxThreshold as n.
+    randomNumber := rand.Intn(maxThreshold)
+
+    fmt.Printf("Throwing a Pokeball at %s...\n", pokemonName)
+    time.Sleep(1 * time.Second) // Add a small delay for effect
+
+    // 5. Compare and Decide
+    if randomNumber < threshold {
+        fmt.Printf("%s was caught!\n", pokemonName)
+        // 6. Add to Pokedex
+        pokedex[pokemonName] = poke // Add the successfully caught pokemon
+    } else {
+        fmt.Printf("%s escaped!\n", pokemonName)
+    }
+
+    return nil
+}

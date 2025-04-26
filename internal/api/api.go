@@ -14,6 +14,14 @@ type NamedAPIResource struct {
     URL  string 
 }
 
+type PokemonStat struct {
+	Stat NamedAPIResource
+	Base_Stat int
+}
+
+type PokemonTypes struct {
+	Type NamedAPIResource
+}
 
 type PokemonEncounter struct {
 	Pokemon NamedAPIResource
@@ -29,6 +37,12 @@ type PokeapiList struct {
 type PokeAreaInfo struct {
 	Location NamedAPIResource
 	Pokemon_Encounters []PokemonEncounter
+}
+
+type PokemonInfo struct {
+	Base_Experience int
+	Stats []PokemonStat
+	types []PokemonTypes
 }
 
 var cache = pokecache.NewCache(5 * time.Second)
@@ -100,4 +114,29 @@ func GetPokeAreaInfo(url string) (PokeAreaInfo, error) {
 	}
 
 	return pokeInfo, nil
+}
+
+func GetPokemonInfo(url string) (PokemonInfo, error) {
+	res, err := http.Get(url)
+	if err != nil {
+		return PokemonInfo{}, fmt.Errorf("error creating request: %w", err)
+	}
+
+	defer res.Body.Close()
+
+	data, err := io.ReadAll(res.Body)
+	if err != nil {
+		return PokemonInfo{}, fmt.Errorf("error reading response body from %s: %w", url, err)
+	}
+
+	cache.Add(url, data)
+
+	var poke PokemonInfo
+
+	err = json.Unmarshal(data, &poke)
+	if err != nil {
+		return PokemonInfo{}, fmt.Errorf("error unmarshalling location list from pokeapi %w", err)
+	}
+
+	return poke, nil
 }
