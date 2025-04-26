@@ -203,32 +203,56 @@ func commandCatch(c *config, args []string) error {
 	if err != nil {
 		return err
 	}
-	// 3. Calculate Catch Threshold (Higher base experience = harder to catch)
-    // We'll use a simple approach: generate a random number up to a max value,
-    // and if it's less than a threshold derived from base experience, it's caught.
-    // Let's set a max threshold, e.g., 400. Higher base experience reduces the chance.
-    const maxThreshold = 400 // Adjust this for overall difficulty
-    // Ensure threshold doesn't go below a minimum, e.g., 20
+
+    const maxThreshold = 400
     threshold := maxThreshold - poke.Base_Experience
     if threshold < 20 {
         threshold = 20
     }
 
-    // 4. Generate Random Number
-    // rand.Intn(n) returns a random number in [0, n). We'll use maxThreshold as n.
+
     randomNumber := rand.Intn(maxThreshold)
 
     fmt.Printf("Throwing a Pokeball at %s...\n", pokemonName)
-    time.Sleep(1 * time.Second) // Add a small delay for effect
+    time.Sleep(1 * time.Second)
 
-    // 5. Compare and Decide
+
     if randomNumber < threshold {
         fmt.Printf("%s was caught!\n", pokemonName)
-        // 6. Add to Pokedex
-        pokedex[pokemonName] = poke // Add the successfully caught pokemon
+        
+        pokedex[pokemonName] = poke
     } else {
         fmt.Printf("%s escaped!\n", pokemonName)
     }
 
     return nil
+}
+
+func commandInspect(c *config, args []string) error {
+	if len(args) == 0 {
+        return fmt.Errorf("you must provide a pokemon name")
+    }
+    if len(args) > 1 {
+        return fmt.Errorf("please provide only one pokemon name")
+    }
+
+	pokemonName := args[0]
+
+	pokemon, exists := pokedex[pokemonName]
+	if exists == false {
+		return fmt.Errorf("%s is not in your pokedex", pokemonName)
+	}
+
+	fmt.Printf("Name: %s\nHeight: %d\nWeight: %d\n", pokemon.Name, pokemon.Height, pokemon.Weight)
+	fmt.Println("Stats:")
+	for i := 0; i < len(pokemon.Stats); i++ {
+		fmt.Printf("	-%s: %d\n", pokemon.Stats[i].Stat.Name, pokemon.Stats[i].Base_Stat)
+	}
+	fmt.Println("Types:")
+	for i := 0; i < len(pokemon.Types); i++ {
+		fmt.Printf("	- %s\n", pokemon.Types[i].Type.Name)
+	}
+
+	return nil
+
 }

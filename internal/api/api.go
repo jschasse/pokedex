@@ -40,9 +40,12 @@ type PokeAreaInfo struct {
 }
 
 type PokemonInfo struct {
+	Name string
+	Height int
+	Weight int
 	Base_Experience int
 	Stats []PokemonStat
-	types []PokemonTypes
+	Types []PokemonTypes
 }
 
 var cache = pokecache.NewCache(5 * time.Second)
